@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/daily_challenge_model.dart';
 import '../data/daily_challenges_data.dart';
 
@@ -6,7 +7,9 @@ class DailyChallengeProvider extends ChangeNotifier {
   DailyChallenge? _currentChallenge;
   ChallengeProgress? _currentProgress;
   int _currentQuestionIndex = 0;
-  Map<int, ChallengeProgress> _completedChallenges = {}; // day -> progress
+  final Map<int, ChallengeProgress> _completedChallenges =
+      {}; // day -> progress
+  DateTime? _lastCompletionDate;
 
   DailyChallenge? get currentChallenge => _currentChallenge;
   ChallengeProgress? get currentProgress => _currentProgress;
@@ -104,7 +107,7 @@ class DailyChallengeProvider extends ChangeNotifier {
   }
 
   // Completa o desafio
-  void completeChallenge() {
+  Future<void> completeChallenge(dynamic userProvider) async {
     if (_currentProgress == null || _currentChallenge == null) return;
     
     int finalPoints = _currentProgress!.pointsEarned;
@@ -122,6 +125,25 @@ class DailyChallengeProvider extends ChangeNotifier {
     
     // Salva no histórico
     _completedChallenges[_currentChallenge!.dayNumber] = _currentProgress!;
+    
+    // Gerencia o streak
+    if (shouldResetStreak) {
+      // Se deveria ter resetado, reseta primeiro
+      userProvider.resetStreak();
+      print('🔄 Streak resetado por inatividade');
+    }
+
+    if (completedYesterday || userProvider.currentUser?.currentStreak == 0) {
+      // Se completou ontem ou é o primeiro dia, incrementa
+      userProvider.incrementStreak();
+      print(
+        '🔥 Streak incrementado: ${userProvider.currentUser?.currentStreak}',
+      );
+    }
+    // Se já completou hoje, não faz nada
+
+    // Marca como completado hoje
+    await markChallengeCompleted();
     
     notifyListeners();
   }
@@ -177,5 +199,67 @@ class DailyChallengeProvider extends ChangeNotifier {
     return _completedChallenges.values
         .where((progress) => progress.isCompleted)
         .length;
+  }
+
+  // Inicializa e carrega dados salvos
+  Future<void> initialize() async {
+    await _loadLastCompletionDate();
+  }
+
+  // Verifica e reseta streak se necessário (chamar no início do app)
+  void checkAndResetStreak(dynamic userProvider) {
+    if (shouldResetStreak && userProvider.currentUser?.currentStreak != 0) {
+      userProvider.resetStreak();
+      print('🔄 Streak resetado automaticamente por inatividade');
+    }
+  }
+
+  // Carrega a última data de conclusão
+  Future<void> _loadLastCompletionDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateString = prefs.getString('last_challenge_completion');
+    if (dateString != null) {
+      _lastCompletionDate = DateTime.parse(dateString);
+    }
+  }
+
+  // Salva a data de conclusão
+  Future<void> _saveLastCompletionDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_challenge_completion', date.toIso8601String());
+    _lastCompletionDate = date;
+  }
+
+  // Verifica se completou o desafio hoje
+  bool get completedToday {
+    if (_lastCompletionDate == null) return false;
+    final now = DateTime.now();
+    return _lastCompletionDate!.year == now.year &&
+        _lastCompletionDate!.month == now.month &&
+        _lastCompletionDate!.day == now.day;
+  }
+
+  // Verifica se completou ontem
+  bool get completedYesterday {
+    if (_lastCompletionDate == null) return false;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return _lastCompletionDate!.year == yesterday.year &&
+        _lastCompletionDate!.month == yesterday.month &&
+        _lastCompletionDate!.day == yesterday.day;
+  }
+
+  // Verifica se deve resetar a sequência
+  bool get shouldResetStreak {
+    if (_lastCompletionDate == null) return false;
+    final now = DateTime.now();
+    final difference = now.difference(_lastCompletionDate!);
+    // Se passou mais de 1 dia, reseta
+    return difference.inDays > 1;
+  }
+
+  // Marca desafio como completado e atualiza streak
+  Future<void> markChallengeCompleted() async {
+    await _saveLastCompletionDate(DateTime.now());
+    notifyListeners();
   }
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/trail_model.dart';
+import '../../data/alfabetizacao_funcional_data.dart';
+import '../../providers/trail_progress_provider.dart';
+import 'trail_detail_screen.dart';
 
 class TrailsScreen extends StatelessWidget {
   const TrailsScreen({super.key});
@@ -61,14 +65,17 @@ class TrailsScreen extends StatelessWidget {
   }
 
   Widget _buildTrailCard(BuildContext context, TrailModel trail) {
+    final progressProvider = context.watch<TrailProgressProvider>();
+    final progress = progressProvider.getTrailProgressPercentage(trail.id);
+    final completedLessons = progressProvider.getCompletedLessonsCount(
+      trail.id,
+    );
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to trail details
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Abrindo trilha: ${trail.title}')),
-          );
+          _openTrail(context, trail);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -171,7 +178,7 @@ class TrailsScreen extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: 0.3, // TODO: Get actual progress
+                  value: progress,
                   backgroundColor: AppColors.divider,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     _getCategoryColor(trail.category),
@@ -181,16 +188,43 @@ class TrailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '30% concluído', // TODO: Get actual progress
+                progress > 0
+                    ? '$completedLessons/${trail.totalLessons} lições • ${(progress * 100).toInt()}% concluído'
+                    : 'Nenhuma lição concluída',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _openTrail(BuildContext context, TrailModel trail) {
+    // For now, only Alfabetização Funcional is implemented
+    if (trail.category == TrailCategory.functionalLiteracy) {
+      final trailData = AlfabetizacaoFuncionalData.getTrail();
+      final lessons = AlfabetizacaoFuncionalData.getLessons();
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TrailDetailScreen(trail: trailData, lessons: lessons),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta trilha ainda está em desenvolvimento'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
   }
 
   Color _getCategoryColor(TrailCategory category) {
@@ -249,14 +283,14 @@ class TrailsScreen extends StatelessWidget {
     if (type == TrailType.foundation) {
       return [
         TrailModel(
-          id: '1',
+          id: 'alfabetizacao_funcional',
           title: 'Alfabetização Funcional',
           description:
               'Compreensão prática do mundo real através da leitura e escrita aplicada ao cotidiano profissional.',
           type: TrailType.foundation,
           category: TrailCategory.functionalLiteracy,
           iconPath: '',
-          totalLessons: 15,
+          totalLessons: 10,
           estimatedHours: 8,
           lessonIds: [],
           requiredLevel: 1,

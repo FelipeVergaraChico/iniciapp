@@ -143,8 +143,9 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     );
   }
 
-  void _nextQuestionOrComplete() {
+  void _nextQuestionOrComplete() async {
     final provider = context.read<DailyChallengeProvider>();
+    final userProvider = context.read<UserProvider>();
     
     if (provider.hasNextQuestion) {
       // Próxima questão
@@ -157,7 +158,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       _loadPreviousAnswer();
     } else {
       // Completar desafio
-      provider.completeChallenge();
+      await provider.completeChallenge(userProvider);
       _showCompletionDialog();
     }
   }

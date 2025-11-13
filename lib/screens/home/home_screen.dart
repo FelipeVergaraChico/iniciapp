@@ -40,8 +40,10 @@ class HomeScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     final user = context.watch<UserProvider>().currentUser;
     final userName = user?.name ?? 'Usuário';
-    final userInitial = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'U';
-    
+    final userInitial = userName.isNotEmpty
+        ? userName.substring(0, 1).toUpperCase()
+        : 'U';
+
     return Row(
       children: [
         CircleAvatar(
@@ -106,10 +108,7 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Acesso Rápido',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('Acesso Rápido', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
@@ -179,23 +178,27 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildRecentActivity(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Atividade Recente',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    final user = context.watch<UserProvider>().currentUser;
+    final streak = user?.currentStreak ?? 0;
+    final streakText = streak == 1 ? 'dia' : 'dias';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Atividades Recentes',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Column(
               children: [
                 _buildActivityItem(
                   icon: Icons.check_circle,
                   title: 'Lição Concluída',
-                  subtitle: 'Interpretação de Texto - Nível 1',
+                  subtitle: 'Alfabetização Funcional - Lição 3',
                   time: 'Há 2 horas',
                   color: AppColors.success,
                 ),
@@ -211,15 +214,15 @@ class HomeScreen extends StatelessWidget {
                 _buildActivityItem(
                   icon: Icons.local_fire_department,
                   title: 'Sequência Mantida',
-                  subtitle: '7 dias consecutivos',
+                  subtitle: '$streak $streakText consecutivos',
                   time: 'Hoje',
                   color: AppColors.accent,
                 ),
               ],
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -240,10 +243,7 @@ class HomeScreen extends StatelessWidget {
       subtitle: Text(subtitle),
       trailing: Text(
         time,
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
     );
   }

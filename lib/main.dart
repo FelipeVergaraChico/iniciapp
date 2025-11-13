@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'providers/user_provider.dart';
 import 'providers/daily_challenge_provider.dart';
 import 'providers/ranking_provider.dart';
+import 'providers/trail_progress_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/trails/trails_screen.dart';
 import 'screens/jobs/jobs_screen.dart';
@@ -24,8 +25,13 @@ class IniciApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => DailyChallengeProvider()),
+        ChangeNotifierProvider(
+          create: (_) => DailyChallengeProvider()..initialize(),
+        ),
         ChangeNotifierProvider(create: (_) => RankingProvider()),
+        ChangeNotifierProvider(
+          create: (_) => TrailProgressProvider()..initialize(),
+        ),
       ],
       child: MaterialApp(
         title: 'IniciApp',
@@ -54,7 +60,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeUser();
       _setupLevelUpListener();
+      _checkStreak();
     });
+  }
+
+  void _checkStreak() {
+    final userProvider = context.read<UserProvider>();
+    final challengeProvider = context.read<DailyChallengeProvider>();
+
+    // Verifica se precisa resetar o streak por inatividade
+    challengeProvider.checkAndResetStreak(userProvider);
   }
 
   void _initializeUser() {
@@ -69,7 +84,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         age: 18,
         level: 1,
         totalPoints: 0,
-        currentStreak: 7,
+        currentStreak: 0,
         createdAt: DateTime.now().subtract(const Duration(days: 30)),
         lastAccessAt: DateTime.now(),
       ),
