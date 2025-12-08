@@ -5,6 +5,10 @@ import '../../providers/user_provider.dart';
 import '../../widgets/level_progress_card.dart';
 import '../../widgets/streak_card.dart';
 import '../../widgets/daily_challenge_card.dart';
+import '../profile/profile_screen.dart';
+import '../company/company_dashboard_screen.dart';
+import '../company/company_login_screen.dart';
+import '../development/development_resources_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, this.onNavigateTab});
@@ -29,6 +33,8 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               _buildQuickActions(context),
               const SizedBox(height: 24),
+              _buildFeaturedCourses(context),
+              const SizedBox(height: 24),
               _buildRecentActivity(context),
             ],
           ),
@@ -46,15 +52,22 @@ class HomeScreen extends StatelessWidget {
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: AppColors.primary,
-          child: Text(
-            userInitial,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+        GestureDetector(
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          },
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.primary,
+            child: Text(
+              userInitial,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
@@ -74,12 +87,46 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(
-          onPressed: () {
-            // TODO: Navigate to notifications
+        PopupMenuButton(
+          icon: const Icon(Icons.business),
+          tooltip: 'Área Empresarial',
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'login',
+              child: Row(
+                children: [
+                  Icon(Icons.login),
+                  SizedBox(width: 8),
+                  Text('Login Empresarial'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'dashboard',
+              child: Row(
+                children: [
+                  Icon(Icons.dashboard),
+                  SizedBox(width: 8),
+                  Text('Dashboard (Demo)'),
+                ],
+              ),
+            ),
+          ],
+          onSelected: (value) {
+            if (value == 'login') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CompanyLoginScreen()),
+              );
+            } else if (value == 'dashboard') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CompanyDashboardScreen(),
+                ),
+              );
+            }
           },
-          icon: const Icon(Icons.notifications_outlined),
-          color: AppColors.primary,
         ),
       ],
     );
@@ -144,6 +191,48 @@ class HomeScreen extends StatelessWidget {
                 onNavigateTab?.call(3);
               },
             ),
+            _buildQuickActionCard(
+              context,
+              icon: Icons.auto_stories_outlined,
+              label: 'Cursos',
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DevelopmentResourcesScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildQuickActionCard(
+              context,
+              icon: Icons.event_outlined,
+              label: 'Eventos',
+              color: Colors.orange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DevelopmentResourcesScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildQuickActionCard(
+              context,
+              icon: Icons.business_outlined,
+              label: 'Empresas',
+              color: Colors.teal,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CompanyDashboardScreen(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
@@ -172,6 +261,131 @@ class HomeScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedCourses(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DevelopmentResourcesScreen(),
+            ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple[600]!, Colors.deepPurple[800]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.auto_stories,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Recomendações para Você',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Cursos, workshops e eventos',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'NOVO',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Descubra oportunidades de desenvolvimento profissional personalizadas para você!',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildFeatureBadge('📚 8+ Cursos'),
+                    const SizedBox(width: 8),
+                    _buildFeatureBadge('🎯 Alta relevância'),
+                    const SizedBox(width: 8),
+                    _buildFeatureBadge('💰 Grátis'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

@@ -5,13 +5,19 @@ import 'providers/user_provider.dart';
 import 'providers/daily_challenge_provider.dart';
 import 'providers/ranking_provider.dart';
 import 'providers/trail_progress_provider.dart';
+import 'providers/professional_profile_provider.dart';
+import 'providers/development_resources_provider.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/company/company_home_screen.dart';
+import 'screens/company/company_dashboard_screen.dart';
 import 'screens/trails/trails_screen.dart';
 import 'screens/jobs/jobs_screen.dart';
 import 'screens/challenges/daily_challenge_screen.dart';
 import 'screens/level_up/level_up_screen.dart';
+import 'screens/profile/profile_screen.dart';
 import 'screens/ranking/ranking_screen.dart';
 import 'models/user_model.dart';
+import 'widgets/data_consent_dialog.dart';
 
 void main() {
   runApp(const IniciApp());
@@ -32,6 +38,10 @@ class IniciApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => TrailProgressProvider()..initialize(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ProfessionalProfileProvider()..initialize(),
+        ),
+        ChangeNotifierProvider(create: (_) => DevelopmentResourcesProvider()),
       ],
       child: MaterialApp(
         title: 'IniciApp',
@@ -70,6 +80,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     // Verifica se precisa resetar o streak por inatividade
     challengeProvider.checkAndResetStreak(userProvider);
+    
+    // Mostra dialog de consentimento de dados se necessário
+    showDataConsentDialogIfNeeded(context);
+
+    // Analisa perfil profissional automaticamente
+    _analyzeProfile();
+  }
+
+  void _analyzeProfile() async {
+    final userProvider = context.read<UserProvider>();
+    final trailProvider = context.read<TrailProgressProvider>();
+    final profileProvider = context.read<ProfessionalProfileProvider>();
+
+    final user = userProvider.currentUser;
+    if (user == null) return;
+
+    // Aguarda um pouco para garantir que os dados estão carregados
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Analisa o perfil baseado no progresso das trilhas
+    await profileProvider.analyzeProfile(
+      user.id,
+      trailProvider.allCompletedLessons,
+      trailProvider.allTrailProgress,
+    );
   }
 
   void _initializeUser() {
@@ -135,35 +170,60 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _screenFor(int index) {
-    switch (index) {
-      case 0:
-        return HomeScreen(
-          onNavigateTab: (i) {
-            if (i == -1) {
-              // -1 indica navegação para desafio diário
-              _navigateToDailyChallenge();
-            } else {
-              setState(() => _currentIndex = i);
-            }
-          },
-        );
-      case 1:
-        return const TrailsScreen();
-      case 2:
-        return const RankingScreen();
-      case 3:
-        return const JobsScreen();
-      case 4:
-        return const Center(child: Text('Perfil - Em breve'));
-      default:
-        return const HomeScreen();
+    final user = context.watch<UserProvider>().currentUser;
+    final isCompany = user?.isCompany ?? false;
+
+    if (isCompany) {
+      // Navegação para empresas: Painel, Candidatos, Vagas, Relatórios
+      switch (index) {
+        case 0:
+          return const CompanyHomeScreen();
+        case 1:
+          return const CompanyDashboardScreen();
+        case 2:
+          return const Center(
+            child: Text('Vagas Publicadas'),
+          ); // TODO: Criar tela
+        case 3:
+          return const Center(child: Text('Relatórios')); // TODO: Criar tela
+        default:
+          return const CompanyHomeScreen();
+      }
+    } else {
+      // Navegação para candidatos: Início, Trilhas, Ranking, Vagas, Perfil
+      switch (index) {
+        case 0:
+          return HomeScreen(
+            onNavigateTab: (i) {
+              if (i == -1) {
+                // -1 indica navegação para desafio diário
+                _navigateToDailyChallenge();
+              } else {
+                setState(() => _currentIndex = i);
+              }
+            },
+          );
+        case 1:
+          return const TrailsScreen();
+        case 2:
+          return const RankingScreen();
+        case 3:
+          return const JobsScreen();
+        case 4:
+          return const ProfileScreen();
+        default:
+          return const HomeScreen();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<UserProvider>().currentUser;
+    final isCompany = user?.isCompany ?? false;
+
     return Scaffold(
-  body: _screenFor(_currentIndex),
+      body: _screenFor(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -171,33 +231,58 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _currentIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Início',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school_outlined),
-            activeIcon: Icon(Icons.school),
-            label: 'Trilhas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.emoji_events_outlined),
-            activeIcon: Icon(Icons.emoji_events),
-            label: 'Ranking',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work_outline),
-            activeIcon: Icon(Icons.work),
-            label: 'Vagas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
+        items: isCompany
+            ? const [
+                // Navegação para empresas
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_outlined),
+                  activeIcon: Icon(Icons.dashboard),
+                  label: 'Painel',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people_outline),
+                  activeIcon: Icon(Icons.people),
+                  label: 'Candidatos',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.work_outline),
+                  activeIcon: Icon(Icons.work),
+                  label: 'Vagas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  activeIcon: Icon(Icons.bar_chart),
+                  label: 'Relatórios',
+                ),
+              ]
+            : const [
+                // Navegação para candidatos
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  activeIcon: Icon(Icons.home),
+                  label: 'Início',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.school_outlined),
+                  activeIcon: Icon(Icons.school),
+                  label: 'Trilhas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.emoji_events_outlined),
+                  activeIcon: Icon(Icons.emoji_events),
+                  label: 'Ranking',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.work_outline),
+                  activeIcon: Icon(Icons.work),
+                  label: 'Vagas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
+                  label: 'Perfil',
+                ),
+              ],
       ),
     );
   }

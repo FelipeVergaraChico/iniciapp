@@ -68,7 +68,9 @@ class DailyChallengeProvider extends ChangeNotifier {
   void answerQuestion(String answer) {
     if (_currentChallenge == null || 
         _currentProgress == null || 
-        currentQuestion == null) return;
+        currentQuestion == null) {
+      return;
+    }
 
     final question = currentQuestion!;
     final isCorrect = question.isCorrect(answer);

@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/user_model.dart';
 
 class UserProvider extends ChangeNotifier {
   UserModel? _currentUser;
   Function(int newLevel)? onLevelUp;
   int? _pendingLevelUp; // Armazena o novo nível pendente
+  static const _storageKey = 'user_profile_v1';
 
   UserModel? get currentUser => _currentUser;
 
@@ -14,11 +17,13 @@ class UserProvider extends ChangeNotifier {
 
   void setUser(UserModel user) {
     _currentUser = user;
+    _persist();
     notifyListeners();
   }
 
   void updateUser(UserModel user) {
     _currentUser = user;
+    _persist();
     notifyListeners();
   }
 
@@ -31,6 +36,7 @@ class UserProvider extends ChangeNotifier {
     
     // Check for level up
     _checkLevelUp();
+    _persist();
     notifyListeners();
   }
 
@@ -40,6 +46,7 @@ class UserProvider extends ChangeNotifier {
     _currentUser = _currentUser!.copyWith(
       currentStreak: _currentUser!.currentStreak + 1,
     );
+    _persist();
     notifyListeners();
   }
 
@@ -49,6 +56,7 @@ class UserProvider extends ChangeNotifier {
     _currentUser = _currentUser!.copyWith(
       currentStreak: 0,
     );
+    _persist();
     notifyListeners();
   }
 
@@ -110,11 +118,38 @@ class UserProvider extends ChangeNotifier {
     updatedSkills[skill] = value;
     
     _currentUser = _currentUser!.copyWith(skillsProfile: updatedSkills);
+    _persist();
     notifyListeners();
   }
 
   void logout() {
     _currentUser = null;
+    _persist();
     notifyListeners();
+  }
+
+  // Carrega usuário do storage (chamar no boot)
+  Future<void> loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_storageKey);
+    if (jsonStr != null) {
+      try {
+        final map = json.decode(jsonStr) as Map<String, dynamic>;
+        _currentUser = UserModel.fromJson(map);
+      } catch (_) {
+        // Ignora erros de parsing e mantém null
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_currentUser == null) {
+      await prefs.remove(_storageKey);
+    } else {
+      final jsonStr = json.encode(_currentUser!.toJson());
+      await prefs.setString(_storageKey, jsonStr);
+    }
   }
 }

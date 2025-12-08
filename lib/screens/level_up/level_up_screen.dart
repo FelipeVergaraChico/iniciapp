@@ -7,10 +7,10 @@ class LevelUpScreen extends StatefulWidget {
   final VoidCallback? onClose;
 
   const LevelUpScreen({
-    Key? key,
+    super.key,
     required this.newLevel,
     this.onClose,
-  }) : super(key: key);
+  });
 
   @override
   State<LevelUpScreen> createState() => _LevelUpScreenState();

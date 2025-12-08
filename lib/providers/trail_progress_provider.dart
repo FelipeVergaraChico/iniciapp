@@ -10,6 +10,13 @@ class TrailProgressProvider extends ChangeNotifier {
 
   Map<String, LessonProgress> get lessonProgress => _lessonProgress;
   Map<String, TrailProgress> get trailProgress => _trailProgress;
+  
+  // Retorna todas as lições completas (para análise de perfil)
+  List<LessonProgress> get allCompletedLessons =>
+      _lessonProgress.values.where((l) => l.isCompleted).toList();
+
+  // Retorna progresso de todas as trilhas (para análise)
+  Map<String, TrailProgress> get allTrailProgress => Map.from(_trailProgress);
 
   // Inicializa o provider carregando dados salvos
   Future<void> initialize() async {

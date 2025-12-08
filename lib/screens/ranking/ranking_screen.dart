@@ -6,7 +6,7 @@ import '../../providers/user_provider.dart';
 import '../../models/ranking_user_model.dart';
 
 class RankingScreen extends StatefulWidget {
-  const RankingScreen({Key? key}) : super(key: key);
+  const RankingScreen({super.key});
 
   @override
   State<RankingScreen> createState() => _RankingScreenState();

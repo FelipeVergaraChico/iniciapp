@@ -9,9 +9,9 @@ class DailyChallengeScreen extends StatefulWidget {
   final int dayNumber;
 
   const DailyChallengeScreen({
-    Key? key,
+    super.key,
     required this.dayNumber,
-  }) : super(key: key);
+  });
 
   @override
   State<DailyChallengeScreen> createState() => _DailyChallengeScreenState();

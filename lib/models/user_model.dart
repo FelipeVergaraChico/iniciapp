@@ -1,3 +1,5 @@
+enum UserType { candidate, company }
+
 class UserModel {
   final String id;
   final String name;
@@ -9,6 +11,7 @@ class UserModel {
   final DateTime createdAt;
   final DateTime lastAccessAt;
   final Map<String, dynamic> skillsProfile;
+  final UserType userType;
 
   UserModel({
     required this.id,
@@ -21,7 +24,10 @@ class UserModel {
     required this.createdAt,
     required this.lastAccessAt,
     Map<String, dynamic>? skillsProfile,
+    this.userType = UserType.candidate,
   }) : skillsProfile = skillsProfile ?? {};
+
+  bool get isCompany => userType == UserType.company;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -35,6 +41,9 @@ class UserModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastAccessAt: DateTime.parse(json['lastAccessAt'] as String),
       skillsProfile: json['skillsProfile'] as Map<String, dynamic>? ?? {},
+      userType: json['userType'] == 'company'
+          ? UserType.company
+          : UserType.candidate,
     );
   }
 
@@ -50,6 +59,7 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'lastAccessAt': lastAccessAt.toIso8601String(),
       'skillsProfile': skillsProfile,
+      'userType': userType == UserType.company ? 'company' : 'candidate',
     };
   }
 
@@ -64,6 +74,7 @@ class UserModel {
     DateTime? createdAt,
     DateTime? lastAccessAt,
     Map<String, dynamic>? skillsProfile,
+    UserType? userType,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -76,6 +87,7 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       lastAccessAt: lastAccessAt ?? this.lastAccessAt,
       skillsProfile: skillsProfile ?? this.skillsProfile,
+      userType: userType ?? this.userType,
     );
   }
 }
